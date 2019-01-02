@@ -121,4 +121,129 @@ model_1.add(Dense(1, activation='linear'))
 model_1.compile(optimizer='adam', loss='mse')
 history = model_1.fit(scaled_train_features, train_targets, epochs=25)
 ```
+# Plot losses
+
+Once we've fit a model, we usually check the training loss curve to make sure it's flattened out. The history returned from model.fit() is a dictionary that has an entry, 'loss', which is the training loss. We want to ensure this has more or less flattened out at the end of our training.
+Instructions
+
+1.    Plot the losses ('loss') from history.history.
+2.    Set the title of the plot as the last loss from history.history, and round it to 6 digits.
+
+```
+# Plot the losses from the fit
+plt.plot(history.history['loss'])
+
+# Use the last loss as the title
+plt.title('loss:' + str(round(history.history['loss'][-1], 6)))
+plt.show()
+```
+
+# Measure performance
+
+Now that we've fit our neural net, let's check performance to see how well our model is predicting new values. There's not a built-in .score() method like with sklearn models, so we'll use the r2_score() function from sklearn.metrics. This calculates the R2
+
+score given arguments (y_true, y_predicted). We'll also plot our predictions versus actual values again. This will yield some interesting results soon (once we implement our own custom loss function).
+
+Instructions
+
+1.    Obtain predictions from model_1 on the test set data (test_features and test_targets).
+2.    Print the R2 score on the test set (test_targets and test_preds).
+3.    Plot the test_preds versus test_targets in a scatter plot with plt.scatter().
+
+```
+from sklearn.metrics import r2_score
+
+# Calculate R^2 score
+train_preds = model_1.predict(scaled_train_features)
+test_preds = model_1.predict(scaled_test_features)
+print(r2_score(train_targets, train_preds))
+print(r2_score(test_targets, test_preds))
+
+# Plot predictions vs actual
+plt.scatter(train_preds, train_targets, label='train')
+plt.scatter(test_preds,test_targets,label='test')
+plt.legend()
+plt.show()
+```
+
+# Custom loss function
+
+Up to now, we've used the mean squared error as a loss function. This works fine, but with stock price prediction it can be useful to implement a custom loss function. A custom loss function can help improve our model's performance in specific ways we choose. For example, we're going to create a custom loss function with a large penalty for predicting price movements in the wrong direction. This will help our net learn to at least predict price movements in the correct direction.
+
+To do this, we need to write a function that takes arguments of (y_true, y_predicted). We'll also use functionality from the backend keras (using tensorflow) to find cases where the true value and prediction don't match signs, then penalize those cases.
+
+Instructions
+
+1.    Set the arguments of the sign_penalty() function to be y_true and y_pred.
+2.    Multiply the squared error (tf.square(y_true - y_pred)) by penalty when the signs of y_true and y_pred are different.
+3.    Return the average of the loss variable from the function -- this is the mean squared error (with our penalty for opposite signs of actual vs predictions).
+
+```
+import keras.losses
+import tensorflow as tf
+
+# Create loss function
+def sign_penalty(y_true, y_pred):
+    penalty = 100.
+    loss = tf.where(tf.less(y_true * y_pred, 0), \
+                     penalty * tf.square(y_true - y_pred), \
+                     tf.square(y_true - y_pred))
+
+    return tf.reduce_mean(loss, axis=-1)
+
+keras.losses.sign_penalty = sign_penalty  # enable use of loss with keras
+print(keras.losses.sign_penalty)
+```
+
+# Fit neural net with custom loss function
+
+Now we'll use the custom loss function we just created. This will enable us to alter the model's behavior in useful ways particular to our problem -- it's going to try to force the model to learn how to at least predict price movement direction correctly. All we need to do now is set the loss argument in our .compile() function to our function name, sign_penalty. We'll examine the training loss again to make sure it's flattened out.
+
+Instructions
+
+1.    Set the input_dim of the first neural network layer to be the number of columns of scaled_train_features with the .shape[1] property.
+2.    Use the custom sign_penalty loss function to .compile() our model_2.
+3.    Plot the loss from the history of the fit. The loss is under history.history['loss'].
+
+```
+# Create the model
+model_2 = Sequential()
+model_2.add(Dense(100, input_dim=scaled_train_features.shape[1], activation='relu'))
+model_2.add(Dense(20, activation='relu'))
+model_2.add(Dense(1, activation='linear'))
+
+# Fit the model with our custom 'sign_penalty' loss function
+model_2.compile(optimizer='adam', loss='sign_penalty')
+history = model_2.fit(scaled_train_features, train_targets, epochs=25)
+plt.plot(history.history['loss'])
+plt.title('loss:' + str(round(history.history['loss'][-1], 6)))
+plt.show()
+```
+
+# Visualize the results
+
+We've fit our model with the custom loss function, and it's time to see how it is performing. We'll check the R2
+
+values again with sklearn's r2_score() function, and we'll create a scatter plot of predictions versus actual values with plt.scatter(). This will yield some interesting results!
+
+Instructions
+
+1.    Create predictions on the test set with .predict(), model_2, and scaled_test_features.
+2.    Evaluate the R2
+
+score on the test set predictions using test_preds and test_targets.
+Plot the test set targets vs actual values with plt.scatter(), and label it 'test'.
+
+```
+# Evaluate R^2 scores
+train_preds = model_2.predict(scaled_train_features)
+test_preds = model_2.predict(scaled_test_features)
+print(r2_score(train_targets, train_preds))
+print(r2_score(test_targets,test_preds))
+
+# Scatter the predictions vs actual -- this one is interesting!
+plt.scatter(train_preds, train_targets, label='train')
+plt.scatter(test_preds, test_targets, label='test')  # plot test set
+plt.legend(); plt.show()
+```
 
