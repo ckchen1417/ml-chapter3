@@ -1,37 +1,35 @@
-## Welcome to GitHub Pages
+# Standardizing data
 
-You can use the [editor on GitHub](https://github.com/ckchen1417/ml-chapter3/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+Some models, like K-nearest neighbors (KNN) & neural networks, work better with scaled data -- so we'll standardize our data.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+We'll also remove unimportant variables (day of week), according to feature importances, by indexing the features DataFrames with .iloc[]. KNN uses distances to find similar points for predictions, so big features outweigh small ones. Scaling data fixes that.
 
-### Markdown
+sklearn's scale() will standardize data, which sets the mean to 0 and standard deviation to 1. Ideally we'd want to use StandardScaler with fit_transform() on the training data, and fit() on the test data, but we are limited to 15 lines of code here.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+Once we've scaled the data, we'll check that it worked by plotting histograms of the data.
 
-```markdown
-Syntax highlighted code block
+Instructions
 
-# Header 1
-## Header 2
-### Header 3
+1.    Remove day of week features from train/test features using .iloc (day of week are the last 4 features).
+2.    Standardize train_features and test_features using sklearn's scale(); store scaled features as scaled_train_features and scaled_test_features.
+3.    Plot a histogram of the 14-day RSI moving average (indexed at [:, 2]) from unscaled train_features on the first subplot (ax[0]]).
+4.    Plot a histogram of the standardized 14-day RSI moving average on the second subplot (ax[1]).
 
-- Bulleted
-- List
+```
+from sklearn.preprocessing import scale
 
-1. Numbered
-2. List
+# Remove unimportant features (weekdays)
+train_features = train_features.iloc[:, :-4]
+test_features = test_features.iloc[:, :-4]
 
-**Bold** and _Italic_ and `Code` text
+# Standardize the train and test features
+scaled_train_features = scale(train_features)
+scaled_test_features = scale(test_features)
 
-[Link](url) and ![Image](src)
+# Plot histograms of the 14-day SMA RSI before and after scaling
+f, ax = plt.subplots(nrows=2, ncols=1)
+train_features.iloc[:, 2].hist(ax=ax[0])
+ax[1].hist(scaled_train_features[:, 2])
+plt.show()
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/ckchen1417/ml-chapter3/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
