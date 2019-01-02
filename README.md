@@ -33,3 +33,92 @@ ax[1].hist(scaled_train_features[:, 2])
 plt.show()
 ```
 
+# Optimize n_neighbors
+
+Now that we have scaled data, we can try using a KNN model. To maximize performance, we should tune our model's hyperparameters. For the k-nearest neighbors algorithm, we only have one hyperparameter: n, the number of neighbors. We set this hyperparameter when we create the model with KNeighborsRegressor. The argument for the number of neighbors is n_neighbors.
+
+We want to try a range of values that passes through the setting with the best performance. Usually we will start with 2 neighbors, and increase until our scoring metric starts to decrease. We'll use the R2
+
+value from the .score() method on the test set (scaled_test_features and test_targets) to optimize n here. We'll use the test set scores to determine the best n.
+
+Instructions
+
+1.    Loop through values of 2 to 12 for n and set this as n_neighbors in the knn model.
+2.    Fit the model to the training data (scaled_train_features and train_targets).
+3.    Print out the R2 values using the .score() method of the knn model for the train and test sets, and take note of the best score on the test set.
+
+```
+from sklearn.neighbors import KNeighborsRegressor
+
+for n in range(2,13,1):
+    # Create and fit the KNN model
+    knn = KNeighborsRegressor(n_neighbors=n)
+    
+    # Fit the model to the training data
+    knn.fit(scaled_train_features, train_targets)
+    
+    # Print number of neighbors and the score to find the best value of n
+    print("n_neighbors =", n)
+    print('train, test scores')
+    print(knn.score(scaled_train_features, train_targets))
+    print(knn.score(scaled_test_features, test_targets))
+    print()  # prints a blank line
+```
+
+# Evaluate KNN performance
+
+We just saw a few things with our KNN scores. For one, the training scores started high and decreased with increasing n, which is typical. The test set performance reached a peak at 5 though, and we will use that as our setting in the final KNN model.
+
+As we have done a few times now, we will check our performance visually. This helps us see how well the model is predicting on different regions of actual values. We will get predictions from our knn model using the .predict() method on our scaled features. Then we'll use matplotlib's plt.scatter() to create a scatter plot of actual versus predicted values.
+
+Instructions
+
+1.    Set n_neighbors in the KNeighborsRegressor to the best-performing value of 5 (found in the previous exercise).
+2.    Obtain predictions using the knn model from the scaled_train_features and scaled_test_features.
+3.    Create a scatter plot of the test_targets versus the test_predictions and label it test.
+
+```
+# Create the model with the best-performing n_neighbors of 5
+knn = KNeighborsRegressor(5)
+
+# Fit the model
+knn.fit(scaled_train_features, train_targets)
+
+# Get predictions for train and test sets
+train_predictions = knn.predict(scaled_train_features)
+test_predictions = knn.predict(scaled_test_features)
+
+# Plot the actual vs predicted values
+plt.scatter(train_predictions, train_targets, label='train')
+plt.scatter(test_predictions, test_targets, label='test')
+plt.legend()
+plt.show()
+```
+
+# Build and fit a simple neural net
+
+The next model we will learn how to use is a neural network. Neural nets can capture complex interactions between variables, but are difficult to set up and understand. Recently, they have been beating human experts in many fields, including image recognition and gaming (check out AlphaGo) -- so they have great potential to perform well.
+
+To build our nets we'll use the keras library. This is a high-level API that allows us to quickly make neural nets, yet still exercise a lot of control over the design. The first thing we'll do is create almost the simplest net possible -- a 3-layer net that takes our inputs and predicts a single value. Much like the sklearn models, keras models have a .fit() method that takes arguments of (features, targets).
+
+Instructions
+
+1.    Create a dense layer with 20 nodes and the ReLU ('relu') activation as the 2nd layer in the neural network.
+2.    Create the last dense layer with 1 node and a linear activation (activation='linear').
+3.    Fit the model to the scaled_train_features and train_targets.
+
+```
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Create the model
+model_1 = Sequential()
+model_1.add(Dense(100, input_dim=scaled_train_features.shape[1], activation='relu'))
+model_1.add(Dense(20, activation='relu'))
+model_1.add(Dense(1, activation='linear'))
+
+# Fit the model
+model_1.compile(optimizer='adam', loss='mse')
+history = model_1.fit(scaled_train_features, train_targets, epochs=25)
+```
+
