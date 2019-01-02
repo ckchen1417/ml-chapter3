@@ -247,3 +247,88 @@ plt.scatter(test_preds, test_targets, label='test')  # plot test set
 plt.legend(); plt.show()
 ```
 
+# Combatting overfitting with dropout
+
+A common problem with neural networks is they tend to overfit to training data. What this means is the scoring metric, like R2
+
+or accuracy, is high for the training set, but low for testing and validation sets, and the model is fitting to noise in the training data.
+
+We can work towards preventing overfitting by using dropout. This randomly drops some neurons during the training phase, which helps prevent the net from fitting noise in the training data. keras has a Dropout layer that we can use to accomplish this. We need to set the dropout rate, or fraction of connections dropped during training time. This is set as a decimal between 0 and 1 in the Dropout() layer.
+
+We're going to go back to the mean squared error loss function for this model.
+
+Instructions
+
+1.    Add a dropout layer (Dropout()) after the first Dense layer in the model, and use 20% (0.2) as the dropout rate.
+2.    Use the adam optimizer and the mse loss function when compiling the model in .compile().
+3.    Fit the model to the scaled_train_features and train_targets using 25 epochs.
+
+```
+from keras.layers import Dropout
+
+# Create model with dropout
+model_3 = Sequential()
+model_3.add(Dense(100, input_dim=scaled_train_features.shape[1], activation='relu'))
+model_3.add(Dropout(0.2))
+model_3.add(Dense(20, activation='relu'))
+model_3.add(Dense(1, activation='linear'))
+
+# Fit model with mean squared error loss function
+model_3.compile(optimizer='adam', loss='mse')
+history = model_3.fit(scaled_train_features, train_targets, epochs=25)
+plt.plot(history.history['loss'])
+plt.title('loss:' + str(round(history.history['loss'][-1], 6)))
+plt.show()
+```
+
+# Ensembling models
+
+One approach to improve predictions from machine learning models is ensembling. A basic approach is to average the predictions from multiple models. A more complex approach is to feed predictions of models into another model, which makes final predictions. Both approaches usually improve our overall performance (as long as our individual models are good). If you remember, random forests are also using ensembling of many decision trees.
+
+To ensemble our neural net predictions, we'll make predictions with the 3 models we just created -- the basic model, the model with the custom loss function, and the model with dropout. Then we'll combine the predictions with numpy's .hstack() function, and average them across rows with np.mean(predictions, axis=1).
+
+Instructions
+
+1.    Create predictions on the scaled_train_features and scaled_test_features for the 3 models we fit (model_1, model_2, model_3) using the .predict() method.
+2.    Horizontally stack (np.hstack() the predictions into a matrix, and take the row-wise averages to get average predictions for the train and test sets.
+
+```
+# Make predictions from the 3 neural net models
+train_pred1 = model_1.predict(scaled_train_features)
+test_pred1 = model_1.predict(scaled_test_features)
+
+train_pred2 = model_2.predict(scaled_train_features)
+test_pred2 = model_2.predict(scaled_test_features)
+
+train_pred3 = model_3.predict(scaled_train_features)
+test_pred3 = model_3.predict(scaled_test_features)
+
+# Horizontally stack predictions and take the average across rows
+train_preds = np.mean(np.hstack((train_pred1, train_pred2, train_pred3)), axis=1)
+test_preds = np.mean(np.hstack((test_pred1,test_pred2,test_pred3)), axis=1)
+print(test_preds[-5:])
+```
+
+# See how the ensemble performed
+
+Let's check performance of our ensembled model to see how it's doing. We should see roughly an average of the R2
+
+scores, as well as a scatter plot that is a mix of our previous models' predictions. The bow-tie shape from the custom loss function model should still be a bit visible, but the edges near x=0 should be softer.
+
+Instructions
+
+1.    Evaluate the R2 scores on the train and test sets. Use the sklearn r2_score() function (already imported for you) with train_targets and train_preds from the previous exercise.
+2.    Plot the train and test predictions versus the actual values with plt.scatter().
+
+```
+from sklearn.metrics import r2_score
+
+# Evaluate the R^2 scores
+print(r2_score(train_targets, train_preds))
+print(r2_score(test_targets, test_preds))
+
+# Scatter the predictions vs actual -- this one is interesting!
+plt.scatter(train_preds, train_targets, label='train')
+plt.scatter(test_preds, test_targets, label='test')
+plt.legend(); plt.show()
+```
